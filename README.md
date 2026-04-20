@@ -177,19 +177,7 @@ DASHBOARD_PORT=8501
 LOG_LEVEL=INFO
 ```
 
-### 4. AWS Bedrock access
-
-Ensure the IAM user/role has the following policy:
-
-```json
-{
-  "Effect": "Allow",
-  "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
-  "Resource": "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-haiku-*"
-}
-```
-
-### 5. Verify installation
+### 4. Verify installation
 
 ```bash
 uv run python -c "from src.agent.graph import build_agent; print('OK')"
@@ -199,7 +187,7 @@ uv run python -c "from src.agent.graph import build_agent; print('OK')"
 
 ## Running the System
 
-### Option A — Streamlit dashboard (recommended)
+### Streamlit dashboard (recommended)
 
 ```bash
 uv run streamlit run src/dashboard/streamlit_app.py
@@ -208,11 +196,13 @@ uv run streamlit run src/dashboard/streamlit_app.py
 Open http://localhost:8501 in your browser.
 
 **Live tab workflow:**
-1. Select source: `Video File` (upload MP4/AVI) or `RTSP Stream` (enter URL)
+1. Select source: `Video File` (upload MP4/AVI, or use the bundled test clips in `data/videos/`) or `RTSP Stream` (enter URL)
 2. Choose security zone from the sidebar
 3. Click **START** — frames process in real time
 4. Alerts appear in the feed as they fire; bounding boxes overlay the frame thumbnail
 5. Click **STOP** when done
+
+> **Test videos:** The `data/videos/` directory contains pre-packaged sample clips covering common security scenarios (after-hours pedestrian, loitering, gate approach). These can be used immediately without any external video source — simply select `Video File` in the dashboard and pick a clip from that folder.
 
 **Timeline tab:**
 - Filter events by date range, severity, zone, or event type
@@ -222,37 +212,6 @@ Open http://localhost:8501 in your browser.
 - Type natural language queries: *"show me all people near the gate after 10pm"*
 - The system parses temporal / class intent, queries SQLite + ChromaDB, and generates a RAG answer
 - Follow-up questions are supported (multi-turn conversation history)
-
-### Option B — Docker Compose
-
-```bash
-docker compose up --build
-```
-
-Services started:
-- `chroma` on port 8000 (vector store)
-- `security-agent` on port 8501 (dashboard + pipeline)
-- `alert-webhook` on port 8080 (optional webhook sink)
-
-### Running tests
-
-```bash
-# Full suite
-uv run pytest tests/ -v
-
-# With coverage report
-uv run pytest tests/ --cov=src --cov-report=html
-open htmlcov/index.html
-
-# Unit tests only (no GPU, no network)
-uv run pytest tests/unit/ -v
-
-# Integration tests (stubs replace all models)
-uv run pytest tests/integration/ -v
-
-# End-to-end scenario tests (uses production rules.yaml)
-uv run pytest tests/scenarios/ -v
-```
 
 ---
 
@@ -455,6 +414,11 @@ drone-security-system/
 │   ├── rules.yaml                # Security rules (hot-reloadable)
 │   ├── settings.yaml             # App-wide configuration
 │   └── zones.yaml                # Named zone polygons
+├── data/
+│   ├── videos/                   # Bundled test videos for local testing (MP4/AVI)
+│   │                             # Covers scenarios: after-hours pedestrian,
+│   │                             # loitering, gate approach, vehicle detection
+│   └── security_memory.db        # SQLite database (auto-created on first run)
 ├── tests/
 │   ├── conftest.py               # Shared fixtures
 │   ├── unit/                     # Per-module isolated tests
