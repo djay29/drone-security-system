@@ -1,0 +1,38 @@
+rules:
+  - name: after_hours_person
+    condition:
+      object_class: person
+      time_range: { start: "22:00", end: "06:00" }
+    severity: high
+    message_template: "Person detected at {zone} at {time}"
+    needs_llm: false
+
+  - name: loitering
+    condition:
+      same_track_id_in_zone_seconds: 60
+    severity: medium
+    message_template: "Loitering detected: track #{track_id} in {zone} for {duration}s"
+    needs_llm: true
+
+  - name: vehicle_repeat_entry
+    condition:
+      same_vehicle_enters_times: 2
+      within_hours: 24
+    severity: low
+    message_template: "Vehicle '{description}' entered {count} times today"
+    needs_llm: true
+
+  - name: forbidden_zone
+    condition:
+      object_class_in: [person, car, truck]
+      zone_in: [restricted_area]
+    severity: high
+    message_template: "{object_class} detected in restricted zone: {zone}"
+    needs_llm: false
+
+  - name: low_battery
+    condition:
+      battery_below: 20
+    severity: medium
+    message_template: "Drone battery low: {battery}% at {zone}"
+    needs_llm: false

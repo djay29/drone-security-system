@@ -1,0 +1,21 @@
+# Zone Definition Configuration
+# Named security zones for the monitored area
+
+zones:
+  main_gate:
+    description: "Main entrance gate"
+    coordinates: [[0, 0], [100, 0], [100, 50], [0, 50]]
+    alert_level: "high"
+    allowed_objects: ["security_personnel", "authorized_vehicles"]
+    
+  garage:
+    description: "Vehicle garage area"
+    coordinates: [[150, 0], [250, 0], [250, 100], [150, 100]]
+    alert_level: "medium"
+    allowed_objects: ["authorized_vehicles"]
+    
+  perimeter:
+    description: "Security perimeter"
+    coordinates: [[0, 0], [300, 0], [300, 200], [0, 200]]
+    alert_level: "low"
+    allowed_objects: ["all"]

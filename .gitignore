@@ -1,0 +1,26 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+*.png
+*.jpg
+*.jpeg
+# Virtual environments
+.venv
+htmlcov
+.env.example
+generate_report.py
+drone-security-agent-context.md
+.coverage
+notebooks\test.ipynb
+*.ipynb
+docker-compose.yml
+app.log
+.python-version
+.claude
+.pytest_cache
+.vscode
+*__pycache__

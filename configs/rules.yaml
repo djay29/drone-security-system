@@ -1,0 +1,324 @@
+rules:
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # PERSON RULES
+  # ─────────────────────────────────────────────────────────────────────────
+
+  - name: after_hours_person
+    condition:
+      object_class: person
+      time_range: { start: "22:00", end: "06:00" }
+    severity: high
+    message_template: "Person detected at {zone} at {time}"
+    needs_llm: false
+
+  - name: after_hours_zone_entry
+    condition:
+      object_class: person
+      zone_in: [garage, main_gate]
+      time_range: { start: "20:00", end: "07:00" }
+    severity: high
+    message_template: "Person detected in {zone} during restricted hours at {time}"
+    needs_llm: false
+
+  - name: loitering
+    condition:
+      same_track_id_in_zone_seconds: 60
+    severity: medium
+    message_template: "Loitering detected: track #{track_id} in {zone} for {duration}s"
+    needs_llm: true
+
+  - name: crowd_gathering
+    condition:
+      object_class: person
+      min_object_count: 3
+    severity: medium
+    message_template: "Crowd gathering: {count} people detected at {zone} at {time}"
+    needs_llm: true
+
+  - name: tailgating
+    condition:
+      object_class: person
+      min_object_count: 2
+      zone_in: [main_gate]
+    severity: high
+    message_template: "Multiple persons ({count}) at {zone} simultaneously — possible tailgating"
+    needs_llm: true
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # VEHICLE RULES
+  # ─────────────────────────────────────────────────────────────────────────
+
+  - name: after_hours_vehicle
+    condition:
+      object_class_in: [car, truck, bus, motorcycle]
+      time_range: { start: "22:00", end: "06:00" }
+    severity: high
+    message_template: "Vehicle ({object_class}) detected at {zone} outside allowed hours at {time}"
+    needs_llm: false
+
+  - name: vehicle_repeat_entry
+    condition:
+      same_vehicle_enters_times: 2
+      within_hours: 24
+    severity: low
+    message_template: "Vehicle '{description}' entered {count} times today"
+    needs_llm: true
+
+  - name: stopped_vehicle
+    condition:
+      same_track_id_in_zone_seconds: 120
+      object_class_filter: [car, truck, bus]
+    severity: medium
+    message_template: "Stopped vehicle: track #{track_id} stationary at {zone} for {duration}s"
+    needs_llm: true
+
+  - name: unattended_vehicle
+    condition:
+      vehicle_without_person: true
+    severity: low
+    message_template: "Unattended vehicle detected at {zone} — no personnel visible"
+    needs_llm: false
+
+  - name: convoy_detection
+    condition:
+      min_distinct_vehicle_classes: 2
+    severity: medium
+    message_template: "Multiple vehicle types at {zone}: {vehicle_types}"
+    needs_llm: true
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # ZONE RULES
+  # ─────────────────────────────────────────────────────────────────────────
+
+  - name: forbidden_zone
+    condition:
+      object_class_in: [person, car, truck]
+      zone_in: [restricted_area]
+    severity: high
+    message_template: "{object_class} detected in restricted zone: {zone}"
+    needs_llm: false
+
+  - name: perimeter_breach
+    condition:
+      object_class_in: [person, car, truck, motorcycle]
+      zone_in: [perimeter]
+    severity: low
+    message_template: "{object_class} detected at perimeter: {zone} at {time}"
+    needs_llm: true
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # CAPTION-BASED BEHAVIOURAL RULES  (require VLM caption to be active)
+  # caption_keywords : any of these phrases/words must appear in the caption
+  # caption_min_match: how many must match (default 1)
+  # ─────────────────────────────────────────────────────────────────────────
+
+  - name: gate_tampering_attempt
+    condition:
+      object_class: person
+      min_object_count: 1
+      caption_keywords:
+        - "open"
+        - "opening"
+        - "tool"
+        - "tools"
+        - "lock"
+        - "picking"
+        - "tampering"
+        - "tamper"
+        - "bends down"
+        - "bent down"
+        - "crouching near gate"
+        - "handle"
+        - "forced"
+        - "prying"
+      caption_min_match: 2
+    severity: high
+    message_template: "Gate tampering attempt at {zone} — matched: {matched_keywords}"
+    needs_llm: true
+
+  - name: coordinated_breach_attempt
+    condition:
+      object_class: person
+      min_object_count: 2
+      caption_keywords:
+        - "guard"
+        - "lookout"
+        - "keeping watch"
+        - "standing guard"
+        - "tool"
+        - "open"
+        - "gate"
+        - "fence"
+        - "break"
+        - "force"
+        - "attempt"
+        - "while another"
+        - "one bends"
+        - "one holds"
+      caption_min_match: 2
+    severity: high
+    message_template: "Coordinated breach attempt at {zone}: {count} people — {matched_keywords}"
+    needs_llm: true
+
+  - name: lookout_behavior
+    condition:
+      object_class: person
+      min_object_count: 2
+      caption_keywords:
+        - "guard"
+        - "lookout"
+        - "keeping watch"
+        - "standing guard"
+        - "watching"
+        - "observing"
+        - "stands nearby"
+        - "third stands"
+        - "one watches"
+      caption_min_match: 1
+    severity: medium
+    message_template: "Lookout behavior detected at {zone}: {count} people, one possibly standing guard"
+    needs_llm: true
+
+  - name: tool_use_near_infrastructure
+    condition:
+      object_class: person
+      caption_keywords:
+        - "tool"
+        - "tools"
+        - "wrench"
+        - "cutters"
+        - "wire cutters"
+        - "bolt cutters"
+        - "screwdriver"
+        - "equipment"
+        - "holding tools"
+        - "carries tools"
+      caption_min_match: 1
+    severity: high
+    message_template: "Person with tools detected near {zone} at {time} — {matched_keywords}"
+    needs_llm: true
+
+  - name: suspicious_crouching
+    condition:
+      object_class: person
+      caption_keywords:
+        - "crouch"
+        - "crouching"
+        - "bending"
+        - "bends"
+        - "kneel"
+        - "kneeling"
+        - "hunched"
+        - "low to the ground"
+        - "inspecting"
+        - "examining"
+        - "possibly inspecting"
+      caption_min_match: 1
+    severity: medium
+    message_template: "Suspicious crouching/inspecting behavior at {zone} at {time}"
+    needs_llm: true
+
+  - name: perimeter_climbing_attempt
+    condition:
+      object_class: person
+      caption_keywords:
+        - "climb"
+        - "climbing"
+        - "scale"
+        - "scaling"
+        - "jump"
+        - "jumping over"
+        - "over the fence"
+        - "over the wall"
+        - "near the fence"
+        - "near the wall"
+      caption_min_match: 1
+    severity: high
+    message_template: "Possible perimeter climbing detected at {zone}"
+    needs_llm: true
+
+  - name: forced_entry_attempt
+    condition:
+      object_class: person
+      min_object_count: 1
+      caption_keywords:
+        - "forcing"
+        - "forced entry"
+        - "break in"
+        - "breaking in"
+        - "jimmying"
+        - "prying open"
+        - "cutting"
+        - "breaking"
+        - "smash"
+        - "kick"
+        - "push open"
+        - "shoulder"
+      caption_min_match: 1
+    severity: high
+    message_template: "Forced entry attempt detected at {zone} at {time}"
+    needs_llm: true
+
+  - name: suspicious_group_activity
+    condition:
+      object_class: person
+      min_object_count: 2
+      caption_keywords:
+        - "attempting"
+        - "attempt"
+        - "secured"
+        - "security"
+        - "unauthorized"
+        - "suspicious"
+        - "unknown individuals"
+        - "unidentified"
+        - "entering"
+        - "breaching"
+      caption_min_match: 1
+    severity: medium
+    message_template: "Suspicious group activity at {zone}: {count} people — {matched_keywords}"
+    needs_llm: true
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # HIGH DENSITY / ACTIVITY RULES
+  # ─────────────────────────────────────────────────────────────────────────
+
+  - name: high_object_density
+    condition:
+      total_object_count_above: 5
+    severity: low
+    message_template: "High activity: {count} objects detected at {zone} at {time}"
+    needs_llm: false
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # TELEMETRY RULES
+  # ─────────────────────────────────────────────────────────────────────────
+
+  - name: battery_critical
+    condition:
+      battery_below: 10
+    severity: high
+    message_template: "CRITICAL: Drone battery at {battery}% — immediate return required"
+    needs_llm: false
+
+  - name: low_battery
+    condition:
+      battery_below: 20
+    severity: medium
+    message_template: "Drone battery low: {battery}% at {zone}"
+    needs_llm: false
+
+  - name: altitude_anomaly_high
+    condition:
+      altitude_above: 120
+    severity: medium
+    message_template: "Drone altitude too high: {altitude}m at {zone}"
+    needs_llm: false
+
+  - name: altitude_anomaly_low
+    condition:
+      altitude_below: 5
+    severity: medium
+    message_template: "Drone altitude dangerously low: {altitude}m at {zone}"
+    needs_llm: false

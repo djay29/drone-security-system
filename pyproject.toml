@@ -1,0 +1,92 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "drone-security-agent"
+version = "0.1.0"
+description = "AI-powered multi-modal security monitoring system for drone surveillance"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Security Team"},
+]
+keywords = ["drone", "security", "ai", "computer-vision", "llm"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "chromadb>=1.5.8",
+    "einops>=0.8.2",
+    "langchain-aws>=1.4.4",
+    "langchain-core>=1.3.0",
+    "langgraph>=1.1.8",
+    "numpy>=2.2.6",
+    "open-clip-torch>=3.3.0",
+    "opencv-python>=4.13.0.92",
+    "pillow>=12.2.0",
+    "python-dotenv>=1.0.0",
+    "pyvips>=3.1.1",
+    "pyvips-binary>=8.18.2",
+    "pyyaml>=6.0.3",
+    "streamlit>=1.56.0",
+    "transformers>=5.5.4",
+    "ultralytics>=8.4.38",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+docker = [
+    "docker>=6.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/organization/drone-security-agent"
+Documentation = "https://github.com/organization/drone-security-agent/wiki"
+Repository = "https://github.com/organization/drone-security-agent.git"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+addopts = "--cov=src --cov-report=html --cov-report=term"
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
+]
